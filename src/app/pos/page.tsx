@@ -17,12 +17,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { th } from "@/lib/translations";
-import { Product } from "@/lib/mock-data";
+import { Product, Sale } from "@/lib/mock-data";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getProducts, saveProducts } from "@/lib/pantry-actions";
+import { getProducts, saveProducts, getSales, saveSales } from "@/lib/pantry-actions";
 
 interface CartItem extends Product {
   quantity: number;
@@ -95,7 +95,7 @@ export default function PosPage() {
   );
   
   const handleCheckout = async () => {
-    // Update stock in Pantry after checkout
+    // 1. Update product stock
     const updatedProducts = products.map(p => {
         const cartItem = cart.find(item => item.id === p.id);
         if (cartItem) {
@@ -104,8 +104,27 @@ export default function PosPage() {
         return p;
     });
 
+    // 2. Create a new sale record
+    const newSale: Sale = {
+        id: `sale_${Date.now()}`,
+        date: new Date().toISOString(),
+        items: cart.map(item => ({
+            productId: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+        })),
+        total: subtotal
+    };
+
     try {
+        // 3. Save updated products and the new sale
         await saveProducts(updatedProducts);
+        
+        const existingSales = await getSales();
+        const updatedSales = [...existingSales, newSale];
+        await saveSales(updatedSales);
+        
         setProducts(updatedProducts); // Update state locally
         toast({
             title: "การขายเสร็จสมบูรณ์",
@@ -113,7 +132,7 @@ export default function PosPage() {
         });
         setCart([]); // Clear the cart
     } catch (error) {
-        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถอัปเดตสต็อกสินค้าได้" });
+        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกข้อมูลการขายได้" });
     }
   }
 

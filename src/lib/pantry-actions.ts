@@ -1,7 +1,7 @@
 
 'use server';
 
-import { Product } from "./mock-data";
+import { Product, Sale } from "./mock-data";
 
 const PANTRY_ID = process.env.PANTRY_ID;
 const BASE_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}`;
@@ -16,12 +16,20 @@ async function handleResponse<T>(response: Response): Promise<T | null> {
         } catch (e) {
             return null; // Return null if JSON parsing fails (e.g., empty response)
         }
-    } else {
-        console.error(`Pantry API Error: ${response.status} ${response.statusText}`);
-        const errorText = await response.text();
-        console.error(`Error details: ${errorText}`);
-        return null;
     }
+    // If basket doesn't exist, Pantry API returns a 400.
+    // We'll check for that and return null.
+    if (!response.ok && response.status === 400) {
+        const errorText = await response.text();
+        if (errorText.includes("does not exist")) {
+            return null; // Basket not found, which is okay on first run.
+        }
+    }
+
+    console.error(`Pantry API Error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text();
+    console.error(`Error details: ${errorText}`);
+    return null;
 }
 
 
@@ -40,14 +48,6 @@ export async function getProducts(): Promise<Product[]> {
         const response = await fetch(`${BASE_URL}/basket/Products`, {
             cache: 'no-store' // Ensure we always get the latest data
         });
-        // If basket doesn't exist, Pantry API returns a 400.
-        // We'll check for that and return an empty array.
-        if (!response.ok && response.status === 400) {
-            const errorText = await response.text();
-            if (errorText.includes("does not exist")) {
-                return []; // Basket not found, which is okay on first run.
-            }
-        }
         const data = await handleResponse<ProductsBasket>(response);
         return data?.products || [];
     } catch (error) {
@@ -71,4 +71,42 @@ export async function saveProducts(products: Product[]): Promise<Product[] | nul
     });
     const data = await handleResponse<ProductsBasket>(response);
     return data?.products || null;
+}
+
+// Sales Data
+interface SalesBasket {
+    sales: Sale[];
+}
+
+export async function getSales(): Promise<Sale[]> {
+    if (!PANTRY_ID) {
+        console.warn("Pantry ID is not configured. Using empty array.");
+        return [];
+    }
+    try {
+        const response = await fetch(`${BASE_URL}/basket/Sales`, {
+            cache: 'no-store'
+        });
+        const data = await handleResponse<SalesBasket>(response);
+        return data?.sales || [];
+    } catch (error) {
+        console.error("Failed to fetch sales from Pantry:", error);
+        return [];
+    }
+}
+
+export async function saveSales(sales: Sale[]): Promise<Sale[] | null> {
+    if (!PANTRY_ID) {
+        console.error("Pantry ID is not configured.");
+        return null;
+    }
+    const response = await fetch(`${BASE_URL}/basket/Sales`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sales }),
+    });
+    const data = await handleResponse<SalesBasket>(response);
+    return data?.sales || null;
 }
