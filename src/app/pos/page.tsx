@@ -49,7 +49,7 @@ export default function PosPage() {
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+      (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const addToCart = (product: Product) => {
@@ -125,7 +125,8 @@ export default function PosPage() {
         const updatedSales = [...existingSales, newSale];
         await saveSales(updatedSales);
         
-        setProducts(updatedProducts); // Update state locally
+        // 4. Refetch products to get latest stock and clear cart
+        await fetchProducts(); 
         toast({
             title: "การขายเสร็จสมบูรณ์",
             description: `ยอดรวม: ฿${subtotal.toLocaleString()}`,
