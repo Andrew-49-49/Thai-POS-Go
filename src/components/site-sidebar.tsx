@@ -24,12 +24,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 function ConnectionStatus() {
     const [status, setStatus] = React.useState<"checking" | "connected" | "error">("checking");
+    const [mounted, setMounted] = React.useState(false);
 
     React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    React.useEffect(() => {
+        if (!mounted) return;
+
         const checkConnection = async () => {
             try {
-                // We can check the connection by sending a request to the pantry base URL
-                // This doesn't fetch any specific basket, just checks if the pantry exists and is reachable.
                 const response = await fetch(`https://getpantry.cloud/apiv1/pantry/${process.env.NEXT_PUBLIC_PANTRY_ID}`);
                 if (response.ok) {
                     setStatus("connected");
@@ -41,12 +46,16 @@ function ConnectionStatus() {
             }
         };
         checkConnection();
-    }, []);
+    }, [mounted]);
 
     const statusConfig = {
         checking: { color: "bg-yellow-500", tooltip: "Checking connection..." },
         connected: { color: "bg-green-500", tooltip: "Connected to Database" },
         error: { color: "bg-red-500", tooltip: "Connection Error" },
+    }
+
+    if (!mounted) {
+        return <div className="h-3 w-3 rounded-full bg-yellow-500" />;
     }
 
     return (
