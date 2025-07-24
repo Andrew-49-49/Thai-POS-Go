@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -33,7 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { th } from "@/lib/translations";
-import { products as initialProducts, Product } from "@/lib/mock-data";
+import { Product } from "@/lib/mock-data";
 import Image from "next/image";
 import { ProductDialog } from "@/components/inventory/product-dialog";
 import {
@@ -48,20 +47,46 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { getSheetData } from "@/lib/sheets-actions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function InventoryPage() {
-  const [products, setProducts] = React.useState<Product[]>(initialProducts);
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
 
+  React.useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      const data = await getSheetData('Sheet1!A2:G'); // Assuming data is in Sheet1 and starts from row 2
+      if (data) {
+        const productsData: Product[] = data.map((row: any[], index: number) => ({
+          id: row[0] || `p${index + 1}`,
+          name: row[1] || "",
+          sku: row[2] || "",
+          price: parseFloat(row[3]) || 0,
+          stock: parseInt(row[4]) || 0,
+          category: row[5] || "",
+          imageUrl: row[6] || undefined,
+        }));
+        setProducts(productsData);
+      }
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
+
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+      (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleSaveProduct = (product: Product) => {
+    // This part would need to be updated to write back to the Google Sheet
     if (editingProduct) {
       setProducts(products.map((p) => (p.id === product.id ? product : p)));
     } else {
@@ -81,6 +106,7 @@ export default function InventoryPage() {
   }
 
   const handleDelete = (productId: string) => {
+    // This part would need to be updated to write back to the Google Sheet
     setProducts(products.filter((p) => p.id !== productId));
   };
 
@@ -129,7 +155,20 @@ export default function InventoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.map((product) => (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                    <TableRow key={index}>
+                        <TableCell className="hidden sm:table-cell">
+                            <Skeleton className="h-[64px] w-[64px] rounded-md" />
+                        </TableCell>
+                        <TableCell><Skeleton className="h-4 w-3/4" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-1/2" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-1/4" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-1/2" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                    </TableRow>
+                ))
+              ) : filteredProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
