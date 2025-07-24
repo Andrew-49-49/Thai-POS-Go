@@ -16,14 +16,51 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarTrigger
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
 import { Button } from "./ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
+
+function ConnectionStatus() {
+    const [status, setStatus] = React.useState<"checking" | "connected" | "error">("checking");
+
+    React.useEffect(() => {
+        const checkConnection = async () => {
+            try {
+                // We can check the connection by sending a request to the pantry base URL
+                // This doesn't fetch any specific basket, just checks if the pantry exists and is reachable.
+                const response = await fetch(`https://getpantry.cloud/apiv1/pantry/${process.env.NEXT_PUBLIC_PANTRY_ID}`);
+                if (response.ok) {
+                    setStatus("connected");
+                } else {
+                    setStatus("error");
+                }
+            } catch (error) {
+                setStatus("error");
+            }
+        };
+        checkConnection();
+    }, []);
+
+    const statusConfig = {
+        checking: { color: "bg-yellow-500", tooltip: "Checking connection..." },
+        connected: { color: "bg-green-500", tooltip: "Connected to Database" },
+        error: { color: "bg-red-500", tooltip: "Connection Error" },
+    }
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div className={cn("h-3 w-3 rounded-full", statusConfig[status].color)} />
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>{statusConfig[status].tooltip}</p>
+            </TooltipContent>
+        </Tooltip>
+    )
+}
+
 
 export function SiteSidebar() {
   const pathname = usePathname()
@@ -44,6 +81,7 @@ export function SiteSidebar() {
                     <Warehouse className="w-5 h-5" />
                 </div>
                 <span className="text-lg font-semibold">{th.appName}</span>
+                <ConnectionStatus />
             </div>
         </SidebarHeader>
         <SidebarContent className="p-2">

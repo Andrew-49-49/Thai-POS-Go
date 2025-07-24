@@ -33,7 +33,7 @@ interface ProductsBasket {
 
 export async function getProducts(): Promise<Product[]> {
     if (!PANTRY_ID) {
-        console.error("Pantry ID is not configured.");
+        console.warn("Pantry ID is not configured. Using empty array.");
         return [];
     }
     try {

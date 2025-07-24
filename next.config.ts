@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  env: {
+    PANTRY_ID: process.env.PANTRY_ID,
+    NEXT_PUBLIC_PANTRY_ID: process.env.PANTRY_ID,
+  }
 };
 
 export default nextConfig;
