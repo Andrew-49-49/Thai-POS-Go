@@ -1,3 +1,4 @@
+
 "use client"
 import * as React from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
@@ -9,8 +10,8 @@ import { th } from "@/lib/translations"
 import { Product, weeklySales } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { getSheetData } from "@/lib/sheets-actions"
 import { Skeleton } from "@/components/ui/skeleton"
+import { getProducts } from "@/lib/pantry-actions"
 
 const chartConfig = {
   sales: {
@@ -26,18 +27,9 @@ export default function Dashboard() {
     React.useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
-            const data = await getSheetData('Sheet1!A2:G');
+            const data = await getProducts();
             if (data) {
-                const productsData: Product[] = data.map((row: any[], index: number) => ({
-                    id: row[0] || `p${index + 1}`,
-                    name: row[1] || "",
-                    sku: row[2] || "",
-                    price: parseFloat(row[3]) || 0,
-                    stock: parseInt(row[4]) || 0,
-                    category: row[5] || "",
-                    imageUrl: row[6] || undefined,
-                }));
-                setLowStockProducts(productsData.filter(p => p.stock < 10));
+                setLowStockProducts(data.filter(p => p.stock < 10));
             }
             setLoading(false);
         };

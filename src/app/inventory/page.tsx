@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -47,9 +48,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { getSheetData, appendSheetData, updateSheetData, clearSheetData } from "@/lib/sheets-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { getProducts, saveProducts } from "@/lib/pantry-actions";
 
 export default function InventoryPage() {
   const [products, setProducts] = React.useState<Product[]>([]);
@@ -61,19 +62,8 @@ export default function InventoryPage() {
 
   const fetchProducts = React.useCallback(async () => {
     setLoading(true);
-    const data = await getSheetData('Sheet1!A2:G'); // Assuming data is in Sheet1 and starts from row 2
-    if (data) {
-      const productsData: Product[] = data.map((row: any[], index: number) => ({
-        id: row[0] || `p${index + 1}`,
-        name: row[1] || "",
-        sku: row[2] || "",
-        price: parseFloat(row[3]) || 0,
-        stock: parseInt(row[4]) || 0,
-        category: row[5] || "",
-        imageUrl: row[6] || undefined,
-      }));
-      setProducts(productsData);
-    }
+    const data = await getProducts();
+    setProducts(data);
     setLoading(false);
   }, []);
 
@@ -89,22 +79,19 @@ export default function InventoryPage() {
 
   const handleSaveProduct = async (product: Product) => {
     try {
+        let updatedProducts: Product[];
         if (editingProduct) {
             // Update existing product
-            const productIndex = products.findIndex((p) => p.id === product.id);
-            if (productIndex === -1) return;
-            const range = `Sheet1!A${productIndex + 2}:G${productIndex + 2}`;
-            const values = [[product.id, product.name, product.sku, product.price, product.stock, product.category, product.imageUrl || ""]];
-            await updateSheetData(range, values);
+            updatedProducts = products.map(p => p.id === product.id ? product : p);
             toast({ title: "สำเร็จ", description: "สินค้าถูกแก้ไขเรียบร้อยแล้ว" });
         } else {
             // Add new product
-            const newId = `p${Date.now()}`;
-            const values = [[newId, product.name, product.sku, product.price, product.stock, product.category, product.imageUrl || ""]];
-            await appendSheetData('Sheet1!A:G', values);
+            const newProduct = { ...product, id: `p${Date.now()}`};
+            updatedProducts = [...products, newProduct];
             toast({ title: "สำเร็จ", description: "สินค้าถูกเพิ่มเรียบร้อยแล้ว" });
         }
-        fetchProducts(); // Refresh data from sheet
+        await saveProducts(updatedProducts);
+        setProducts(updatedProducts);
     } catch (error) {
         toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกข้อมูลสินค้าได้" });
     }
@@ -123,12 +110,10 @@ export default function InventoryPage() {
 
   const handleDelete = async (productId: string) => {
      try {
-        const productIndex = products.findIndex((p) => p.id === productId);
-        if (productIndex === -1) return;
-        const range = `Sheet1!A${productIndex + 2}:G${productIndex + 2}`;
-        await clearSheetData(range); // This will clear the row
+        const updatedProducts = products.filter(p => p.id !== productId);
+        await saveProducts(updatedProducts);
+        setProducts(updatedProducts);
         toast({ title: "สำเร็จ", description: "สินค้าถูกลบเรียบร้อยแล้ว" });
-        fetchProducts(); // Refresh data
      } catch (error) {
         toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถลบสินค้าได้" });
      }
@@ -192,7 +177,8 @@ export default function InventoryPage() {
                         <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
                     </TableRow>
                 ))
-              ) : filteredProducts.map((product) => (
+              ) : filteredProducts.length > 0 ? (
+                 filteredProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
@@ -254,7 +240,13 @@ export default function InventoryPage() {
                     </AlertDialog>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))) : (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                        ไม่มีสินค้า.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -20,8 +21,8 @@ import { Product } from "@/lib/mock-data";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { getSheetData } from "@/lib/sheets-actions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getProducts, saveProducts } from "@/lib/pantry-actions";
 
 interface CartItem extends Product {
   quantity: number;
@@ -34,27 +35,16 @@ export default function PosPage() {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      const data = await getSheetData('Sheet1!A2:G');
-      if (data) {
-        const productsData: Product[] = data.map((row: any[], index: number) => ({
-          id: row[0] || `p${index + 1}`,
-          name: row[1] || "",
-          sku: row[2] || "",
-          price: parseFloat(row[3]) || 0,
-          stock: parseInt(row[4]) || 0,
-          category: row[5] || "",
-          imageUrl: row[6] || undefined,
-        }));
-        setProducts(productsData.filter(p => p.stock > 0)); // Only show items in stock
-      }
-      setLoading(false);
-    };
-
-    fetchProducts();
+  const fetchProducts = React.useCallback(async () => {
+    setLoading(true);
+    const data = await getProducts();
+    setProducts(data);
+    setLoading(false);
   }, []);
+
+  React.useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const filteredProducts = products.filter(
     (product) =>
@@ -104,15 +94,27 @@ export default function PosPage() {
     0
   );
   
-  const handleCheckout = () => {
-    // Here you would typically process the payment and record the sale
-    // For now, we just show a toast and clear the cart
-    toast({
-        title: "การขายเสร็จสมบูรณ์",
-        description: `ยอดรวม: ฿${subtotal.toLocaleString()}`,
+  const handleCheckout = async () => {
+    // Update stock in Pantry after checkout
+    const updatedProducts = products.map(p => {
+        const cartItem = cart.find(item => item.id === p.id);
+        if (cartItem) {
+            return { ...p, stock: p.stock - cartItem.quantity };
+        }
+        return p;
     });
-    // TODO: Update stock in Google Sheet after checkout
-    setCart([]);
+
+    try {
+        await saveProducts(updatedProducts);
+        setProducts(updatedProducts); // Update state locally
+        toast({
+            title: "การขายเสร็จสมบูรณ์",
+            description: `ยอดรวม: ฿${subtotal.toLocaleString()}`,
+        });
+        setCart([]); // Clear the cart
+    } catch (error) {
+        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถอัปเดตสต็อกสินค้าได้" });
+    }
   }
 
   return (
@@ -151,7 +153,8 @@ export default function PosPage() {
                             </CardContent>
                         </Card>
                     ))
-                ) : filteredProducts.map((product) => (
+                ) : filteredProducts.filter(p => p.stock > 0).length > 0 ? (
+                    filteredProducts.filter(p => p.stock > 0).map((product) => (
                     <Card key={product.id} className="overflow-hidden">
                         <div className="relative">
                             <Image
@@ -177,7 +180,10 @@ export default function PosPage() {
                             </Button>
                         </CardContent>
                     </Card>
-                ))}
+                ))
+                ) : (
+                    <p className="col-span-full text-center text-muted-foreground">ไม่มีสินค้าในสต็อก</p>
+                )}
                 </CardContent>
             </Card>
         </div>
