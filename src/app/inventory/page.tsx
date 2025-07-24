@@ -50,22 +50,14 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { getProducts, saveProducts } from "@/lib/pantry-actions";
+import { useProductStore } from "@/hooks/use-product-store";
 
 export default function InventoryPage() {
-  const [products, setProducts] = React.useState<Product[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const { products, loading, fetchProducts, addProduct, updateProduct, deleteProduct } = useProductStore();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
   const { toast } = useToast();
-
-  const fetchProducts = React.useCallback(async () => {
-    setLoading(true);
-    const data = await getProducts();
-    setProducts(data);
-    setLoading(false);
-  }, []);
 
   React.useEffect(() => {
     fetchProducts();
@@ -79,31 +71,19 @@ export default function InventoryPage() {
 
   const handleSaveProduct = async (product: Omit<Product, 'id'> & { id?: string }) => {
     try {
-        let updatedProducts: Product[];
-        if (editingProduct && product.id) {
-            updatedProducts = products.map(p => p.id === product.id ? (product as Product) : p);
-            toast({ title: "สำเร็จ", description: "สินค้าถูกแก้ไขเรียบร้อยแล้ว" });
-        } else {
-            const newProduct = { ...product, id: `prod_${Date.now()}`};
-            updatedProducts = [...products, newProduct];
-            toast({ title: "สำเร็จ", description: "สินค้าถูกเพิ่มเรียบร้อยแล้ว" });
-        }
-        
-        const savedData = await saveProducts(updatedProducts);
-        
-        if (savedData) {
-            setProducts(savedData);
-        } else {
-            // If save fails, refetch from server to be safe
-            await fetchProducts();
-        }
-        
-        setIsDialogOpen(false);
+      if (editingProduct && product.id) {
+        await updateProduct(product as Product);
+        toast({ title: "สำเร็จ", description: "สินค้าถูกแก้ไขเรียบร้อยแล้ว" });
+      } else {
+        await addProduct(product);
+        toast({ title: "สำเร็จ", description: "สินค้าถูกเพิ่มเรียบร้อยแล้ว" });
+      }
+      setIsDialogOpen(false);
     } catch (error) {
-        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกข้อมูลสินค้าได้" });
-        await fetchProducts(); // Refetch on error
+      // The store handles its own error toasts
+    } finally {
+      setEditingProduct(undefined);
     }
-    setEditingProduct(undefined);
   };
 
   const handleEdit = (product: Product) => {
@@ -118,15 +98,12 @@ export default function InventoryPage() {
 
   const handleDelete = async (productId: string) => {
      try {
-        const updatedProducts = products.filter(p => p.id !== productId);
-        await saveProducts(updatedProducts);
-        setProducts(updatedProducts);
+        await deleteProduct(productId);
         toast({ title: "สำเร็จ", description: "สินค้าถูกลบเรียบร้อยแล้ว" });
      } catch (error) {
-        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถลบสินค้าได้" });
+        // The store handles its own error toasts
      }
   };
-
 
   return (
     <div className="flex flex-col gap-6">

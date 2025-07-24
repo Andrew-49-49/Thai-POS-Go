@@ -7,11 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ChartTooltip, ChartTooltipContent, ChartContainer } from "@/components/ui/chart"
 import { th } from "@/lib/translations"
-import { Product, weeklySales } from "@/lib/mock-data"
+import { weeklySales } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getProducts } from "@/lib/pantry-actions"
+import { useProductStore } from "@/hooks/use-product-store"
 
 const chartConfig = {
   sales: {
@@ -21,22 +21,13 @@ const chartConfig = {
 }
 
 export default function Dashboard() {
-    const [lowStockProducts, setLowStockProducts] = React.useState<Product[]>([]);
-    const [loading, setLoading] = React.useState(true);
-
+    const { products, loading, fetchProducts } = useProductStore();
+    
     React.useEffect(() => {
-        const fetchProducts = async () => {
-            setLoading(true);
-            const data = await getProducts();
-            if (data) {
-                setLowStockProducts(data.filter(p => p.stock < 10));
-            }
-            setLoading(false);
-        };
-
         fetchProducts();
-    }, []);
+    }, [fetchProducts]);
 
+    const lowStockProducts = products.filter(p => p.stock < 10);
 
   return (
     <div className="flex flex-col gap-6">

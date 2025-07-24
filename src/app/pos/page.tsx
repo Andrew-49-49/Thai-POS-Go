@@ -22,25 +22,18 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getProducts, saveProducts, getSales, saveSales } from "@/lib/pantry-actions";
+import { getSales, saveSales } from "@/lib/pantry-actions";
+import { useProductStore } from "@/hooks/use-product-store";
 
 interface CartItem extends Product {
   quantity: number;
 }
 
 export default function PosPage() {
+  const { products, loading, fetchProducts, updateStock } = useProductStore();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [cart, setCart] = React.useState<CartItem[]>([]);
   const { toast } = useToast();
-  const [products, setProducts] = React.useState<Product[]>([]);
-  const [loading, setLoading] = React.useState(true);
-
-  const fetchProducts = React.useCallback(async () => {
-    setLoading(true);
-    const data = await getProducts();
-    setProducts(data);
-    setLoading(false);
-  }, []);
 
   React.useEffect(() => {
     fetchProducts();
@@ -95,16 +88,7 @@ export default function PosPage() {
   );
   
   const handleCheckout = async () => {
-    // 1. Update product stock
-    const updatedProducts = products.map(p => {
-        const cartItem = cart.find(item => item.id === p.id);
-        if (cartItem) {
-            return { ...p, stock: p.stock - cartItem.quantity };
-        }
-        return p;
-    });
-
-    // 2. Create a new sale record
+    // 1. Create a new sale record
     const newSale: Sale = {
         id: `sale_${Date.now()}`,
         date: new Date().toISOString(),
@@ -118,15 +102,15 @@ export default function PosPage() {
     };
 
     try {
-        // 3. Save updated products and the new sale
-        await saveProducts(updatedProducts);
+        // 2. Update product stock in the store
+        await updateStock(cart.map(item => ({ id: item.id, quantity: item.quantity })));
         
+        // 3. Save the new sale
         const existingSales = await getSales();
         const updatedSales = [...existingSales, newSale];
         await saveSales(updatedSales);
         
-        // 4. Refetch products to get latest stock and clear cart
-        await fetchProducts(); 
+        // 4. Show success and clear cart
         toast({
             title: "การขายเสร็จสมบูรณ์",
             description: `ยอดรวม: ฿${subtotal.toLocaleString()}`,
