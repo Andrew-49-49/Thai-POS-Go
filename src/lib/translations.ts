@@ -1,0 +1,76 @@
+export const th = {
+  appName: "Thai POS Go",
+  dashboard: "แดชบอร์ด",
+  inventory: "สินค้าคงคลัง",
+  pos: "ขายหน้าร้าน",
+  sales: "ประวัติการขาย",
+  insights: "ข้อมูลเชิงลึก AI",
+  settings: "ตั้งค่า",
+  profile: "โปรไฟล์",
+  myAccount: "บัญชีของฉัน",
+  logout: "ออกจากระบบ",
+  
+  // Dashboard
+  todaysSales: "ยอดขายวันนี้",
+  totalSales: "จำนวนขายทั้งหมด",
+  newCustomers: "ลูกค้าใหม่",
+  fromLastMonth: "จากเดือนที่แล้ว",
+  salesOverview: "ภาพรวมยอดขาย",
+  lowStockItems: "สินค้าใกล้หมด",
+  itemsNeedRestocking: "รายการที่ต้องเติมสต็อก",
+  product: "สินค้า",
+  stock: "ในสต็อก",
+  
+  // Inventory
+  manageInventory: "จัดการสินค้าคงคลัง",
+  searchProducts: "ค้นหาสินค้า...",
+  addProduct: "เพิ่มสินค้า",
+  editProduct: "แก้ไขสินค้า",
+  deleteProduct: "ลบสินค้า",
+  productName: "ชื่อสินค้า",
+  sku: "SKU",
+  price: "ราคา",
+  category: "หมวดหมู่",
+  actions: "การกระทำ",
+  edit: "แก้ไข",
+  delete: "ลบ",
+  save: "บันทึก",
+  cancel: "ยกเลิก",
+  confirmDelete: "ยืนยันการลบ",
+  confirmDeleteMessage: "คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้?",
+  productDetails: "รายละเอียดสินค้า",
+  
+  // POS
+  pointOfSale: "หน้าขายสินค้า",
+  addToCart: "เพิ่มลงตะกร้า",
+  shoppingCart: "ตะกร้าสินค้า",
+  emptyCart: "ตะกร้าสินค้าว่างเปล่า",
+  quantity: "จำนวน",
+  total: "รวม",
+  subtotal: "ยอดรวม",
+  discount: "ส่วนลด",
+  checkout: "ชำระเงิน",
+  
+  // Sales
+  salesHistory: "ประวัติการขาย",
+  saleId: "รหัสการขาย",
+  date: "วันที่",
+  items: "รายการ",
+  filterByDate: "กรองตามวันที่",
+  
+  // Insights
+  salesInsights: "ข้อมูลเชิงลึกการขาย",
+  generateInsights: "สร้างข้อมูลเชิงลึก",
+  generating: "กำลังสร้าง...",
+  topSellingItems: "สินค้าขายดี",
+  salesTrends: "แนวโน้มการขาย",
+
+  // Weekdays
+  monday: "จันทร์",
+  tuesday: "อังคาร",
+  wednesday: "พุธ",
+  thursday: "พฤหัสบดี",
+  friday: "ศุกร์",
+  saturday: "เสาร์",
+  sunday: "อาทิตย์",
+};
