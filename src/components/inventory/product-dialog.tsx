@@ -23,7 +23,7 @@ interface ProductDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   product?: Product;
-  onSave: (product: Product) => void;
+  onSave: (product: Omit<Product, 'id'> & { id?: string }) => void;
 }
 
 const formSchema = z.object({
@@ -32,6 +32,7 @@ const formSchema = z.object({
   price: z.coerce.number().min(0, { message: "ราคาต้องไม่ติดลบ" }),
   stock: z.coerce.number().int().min(0, { message: "สต็อกต้องไม่ติดลบ" }),
   category: z.string().optional(),
+  imageUrl: z.string().optional(),
 });
 
 
@@ -44,6 +45,7 @@ export function ProductDialog({ isOpen, setIsOpen, product, onSave }: ProductDia
       price: 0,
       stock: 0,
       category: "",
+      imageUrl: "",
     },
   });
 
@@ -57,6 +59,7 @@ export function ProductDialog({ isOpen, setIsOpen, product, onSave }: ProductDia
         price: 0,
         stock: 0,
         category: "",
+        imageUrl: "",
       });
     }
   }, [product, form, isOpen]);
@@ -64,7 +67,7 @@ export function ProductDialog({ isOpen, setIsOpen, product, onSave }: ProductDia
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     onSave({
       ...values,
-      id: product?.id || "",
+      id: product?.id,
     });
     setIsOpen(false);
   };
@@ -144,6 +147,19 @@ export function ProductDialog({ isOpen, setIsOpen, product, onSave }: ProductDia
                             <FormLabel>{th.category}</FormLabel>
                             <FormControl>
                                 <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Image URL</FormLabel>
+                            <FormControl>
+                                <Input {...field} placeholder="https://placehold.co/64x64" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

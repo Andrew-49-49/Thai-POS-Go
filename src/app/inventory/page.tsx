@@ -77,21 +77,22 @@ export default function InventoryPage() {
       (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSaveProduct = async (product: Product) => {
+  const handleSaveProduct = async (product: Omit<Product, 'id'> & { id?: string }) => {
     try {
         let updatedProducts: Product[];
-        if (editingProduct) {
+        if (editingProduct && product.id) {
             // Update existing product
-            updatedProducts = products.map(p => p.id === product.id ? product : p);
+            updatedProducts = products.map(p => p.id === product.id ? (product as Product) : p);
             toast({ title: "สำเร็จ", description: "สินค้าถูกแก้ไขเรียบร้อยแล้ว" });
         } else {
             // Add new product
-            const newProduct = { ...product, id: `p${Date.now()}`};
+            const newProduct = { ...product, id: `prod_${Date.now()}`};
             updatedProducts = [...products, newProduct];
             toast({ title: "สำเร็จ", description: "สินค้าถูกเพิ่มเรียบร้อยแล้ว" });
         }
         await saveProducts(updatedProducts);
         setProducts(updatedProducts);
+        setIsDialogOpen(false);
     } catch (error) {
         toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกข้อมูลสินค้าได้" });
     }
