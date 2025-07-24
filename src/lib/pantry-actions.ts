@@ -40,11 +40,19 @@ export async function getProducts(): Promise<Product[]> {
         const response = await fetch(`${BASE_URL}/basket/products`, {
             cache: 'no-store' // Ensure we always get the latest data
         });
+        // If basket doesn't exist, Pantry API returns a 400.
+        // We'll check for that and return an empty array.
+        if (!response.ok && response.status === 400) {
+            const errorText = await response.text();
+            if (errorText.includes("does not exist")) {
+                return []; // Basket not found, which is okay on first run.
+            }
+        }
         const data = await handleResponse<ProductsBasket>(response);
         return data?.products || [];
     } catch (error) {
-        // If the basket doesn't exist, Pantry returns a 400 which is caught here.
-        // In this case, we just return an empty array.
+        // Catch any other network errors
+        console.error("Failed to fetch products from Pantry:", error);
         return [];
     }
 }

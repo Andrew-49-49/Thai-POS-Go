@@ -159,7 +159,7 @@ export function ProductDialog({ isOpen, setIsOpen, product, onSave }: ProductDia
                         <FormItem>
                             <FormLabel>Image URL</FormLabel>
                             <FormControl>
-                                <Input {...field} placeholder="https://placehold.co/64x64" />
+                                <Input {...field} placeholder="https://placehold.co/64x64.png" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

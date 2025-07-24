@@ -186,7 +186,7 @@ export default function InventoryPage() {
                       alt={product.name}
                       className="aspect-square rounded-md object-cover"
                       height="64"
-                      src={product.imageUrl || "https://placehold.co/64x64"}
+                      src={product.imageUrl || "https://placehold.co/64x64.png"}
                       width="64"
                       data-ai-hint="product image"
                     />

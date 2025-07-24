@@ -161,7 +161,7 @@ export default function PosPage() {
                             alt={product.name}
                             className="aspect-square w-full object-cover"
                             height="200"
-                            src={product.imageUrl || "https://placehold.co/200x200"}
+                            src={product.imageUrl || "https://placehold.co/200x200.png"}
                             width="200"
                             data-ai-hint="product photo"
                             />
@@ -201,7 +201,7 @@ export default function PosPage() {
                 <div className="flex flex-col gap-4">
                   {cart.map((item) => (
                     <div key={item.id} className="flex items-center gap-4">
-                        <Image src={item.imageUrl || "https://placehold.co/64x64"} alt={item.name} width={64} height={64} className="rounded-md" data-ai-hint="product photo"/>
+                        <Image src={item.imageUrl || "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" data-ai-hint="product photo"/>
                         <div className="flex-grow">
                             <p className="font-medium text-sm">{item.name}</p>
                             <p className="text-xs text-muted-foreground">฿{item.price.toLocaleString()}</p>

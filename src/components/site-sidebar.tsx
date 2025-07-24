@@ -106,7 +106,7 @@ export function SiteSidebar() {
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="w-full justify-start gap-2 h-12 p-2">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src="https://placehold.co/40x40" alt="User Avatar" />
+                            <AvatarImage src="https://placehold.co/40x40.png" alt="User Avatar" />
                             <AvatarFallback>U</AvatarFallback>
                         </Avatar>
                          <div className="text-left group-data-[collapsible=icon]:hidden">
