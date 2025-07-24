@@ -81,20 +81,27 @@ export default function InventoryPage() {
     try {
         let updatedProducts: Product[];
         if (editingProduct && product.id) {
-            // Update existing product
             updatedProducts = products.map(p => p.id === product.id ? (product as Product) : p);
             toast({ title: "สำเร็จ", description: "สินค้าถูกแก้ไขเรียบร้อยแล้ว" });
         } else {
-            // Add new product
             const newProduct = { ...product, id: `prod_${Date.now()}`};
             updatedProducts = [...products, newProduct];
             toast({ title: "สำเร็จ", description: "สินค้าถูกเพิ่มเรียบร้อยแล้ว" });
         }
-        await saveProducts(updatedProducts);
-        setProducts(updatedProducts);
+        
+        const savedData = await saveProducts(updatedProducts);
+        
+        if (savedData) {
+            setProducts(savedData);
+        } else {
+            // If save fails, refetch from server to be safe
+            await fetchProducts();
+        }
+        
         setIsDialogOpen(false);
     } catch (error) {
         toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกข้อมูลสินค้าได้" });
+        await fetchProducts(); // Refetch on error
     }
     setEditingProduct(undefined);
   };
