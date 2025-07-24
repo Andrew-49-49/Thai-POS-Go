@@ -1,3 +1,4 @@
+
 import { google } from "googleapis";
 
 // Ensure you have a .env.local file with these variables
@@ -13,7 +14,7 @@ if (!SPREADSHEET_ID || !GOOGLE_SHEETS_CLIENT_EMAIL || !GOOGLE_SHEETS_PRIVATE_KEY
 
 
 export const getSheets = () => {
-    if (!GOOGLE_SHESHEETS_CLIENT_EMAIL || !GOOGLE_SHEETS_PRIVATE_KEY) {
+    if (!GOOGLE_SHEETS_CLIENT_EMAIL || !GOOGLE_SHEETS_PRIVATE_KEY) {
         return null;
     }
 
