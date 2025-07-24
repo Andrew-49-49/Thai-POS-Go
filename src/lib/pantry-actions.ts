@@ -25,7 +25,7 @@ async function handleResponse<T>(response: Response): Promise<T | null> {
 }
 
 
-// In Pantry, we'll store all products in a single basket called 'products'.
+// In Pantry, we'll store all products in a single basket called 'Products'.
 // The basket will contain an object with a 'products' key, which is an array of Product objects.
 interface ProductsBasket {
     products: Product[];
@@ -37,7 +37,7 @@ export async function getProducts(): Promise<Product[]> {
         return [];
     }
     try {
-        const response = await fetch(`${BASE_URL}/basket/products`, {
+        const response = await fetch(`${BASE_URL}/basket/Products`, {
             cache: 'no-store' // Ensure we always get the latest data
         });
         // If basket doesn't exist, Pantry API returns a 400.
@@ -62,7 +62,7 @@ export async function saveProducts(products: Product[]): Promise<Product[] | nul
         console.error("Pantry ID is not configured.");
         return null;
     }
-    const response = await fetch(`${BASE_URL}/basket/products`, {
+    const response = await fetch(`${BASE_URL}/basket/Products`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
