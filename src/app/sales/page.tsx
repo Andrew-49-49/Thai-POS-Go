@@ -104,7 +104,7 @@ export default function SalesHistoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSales.map((sale) => (
+              {filteredSales.length > 0 ? filteredSales.map((sale) => (
                 <TableRow key={sale.id}>
                   <TableCell className="font-medium">
                     <Badge variant="secondary">{sale.id}</Badge>
@@ -125,7 +125,13 @@ export default function SalesHistoryPage() {
                     ฿{sale.total.toLocaleString()}
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    ไม่มีข้อมูลการขาย
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

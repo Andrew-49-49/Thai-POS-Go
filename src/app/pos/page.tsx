@@ -16,10 +16,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { th } from "@/lib/translations";
-import { products, Product } from "@/lib/mock-data";
+import { Product } from "@/lib/mock-data";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { getSheetData } from "@/lib/sheets-actions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CartItem extends Product {
   quantity: number;
@@ -29,6 +31,30 @@ export default function PosPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [cart, setCart] = React.useState<CartItem[]>([]);
   const { toast } = useToast();
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      const data = await getSheetData('Sheet1!A2:G');
+      if (data) {
+        const productsData: Product[] = data.map((row: any[], index: number) => ({
+          id: row[0] || `p${index + 1}`,
+          name: row[1] || "",
+          sku: row[2] || "",
+          price: parseFloat(row[3]) || 0,
+          stock: parseInt(row[4]) || 0,
+          category: row[5] || "",
+          imageUrl: row[6] || undefined,
+        }));
+        setProducts(productsData.filter(p => p.stock > 0)); // Only show items in stock
+      }
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = products.filter(
     (product) =>
@@ -40,6 +66,11 @@ export default function PosPage() {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
+        // Prevent adding more than available in stock
+        if (existingItem.quantity >= product.stock) {
+            toast({ variant: "destructive", description: `มีสินค้า ${product.name} ในสต็อกไม่พอ`});
+            return prevCart;
+        }
         return prevCart.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
@@ -51,6 +82,12 @@ export default function PosPage() {
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
+    const product = products.find(p => p.id === productId);
+    if(product && quantity > product.stock) {
+        toast({ variant: "destructive", description: `มีสินค้า ${product.name} ในสต็อกไม่พอ`});
+        quantity = product.stock;
+    }
+
     if (quantity <= 0) {
       setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
     } else {
@@ -69,10 +106,12 @@ export default function PosPage() {
   
   const handleCheckout = () => {
     // Here you would typically process the payment and record the sale
+    // For now, we just show a toast and clear the cart
     toast({
         title: "การขายเสร็จสมบูรณ์",
         description: `ยอดรวม: ฿${subtotal.toLocaleString()}`,
     });
+    // TODO: Update stock in Google Sheet after checkout
     setCart([]);
   }
 
@@ -101,7 +140,18 @@ export default function PosPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                {filteredProducts.map((product) => (
+                {loading ? (
+                    Array.from({length: 8}).map((_, i) => (
+                        <Card key={i} className="overflow-hidden">
+                            <Skeleton className="aspect-square w-full" />
+                            <CardContent className="p-4 space-y-2">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-4 w-1/2" />
+                                <Skeleton className="h-9 w-full mt-2" />
+                            </CardContent>
+                        </Card>
+                    ))
+                ) : filteredProducts.map((product) => (
                     <Card key={product.id} className="overflow-hidden">
                         <div className="relative">
                             <Image

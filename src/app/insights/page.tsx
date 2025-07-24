@@ -5,25 +5,26 @@ import { Lightbulb, Loader2, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { th } from "@/lib/translations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { products } from "@/lib/mock-data";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Product } from "@/lib/mock-data";
 
 export default function InsightsPage() {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [insights, setInsights] = React.useState<any | null>(null);
+  const [insights, setInsights] = React.useState<{topSellers: Product[], trends: string} | null>(null);
 
   const handleGenerateInsights = () => {
     setIsLoading(true);
     setInsights(null);
     // Simulate AI call
     setTimeout(() => {
+      // This would be replaced by a real AI call that analyzes sales data
       setInsights({
-        topSellers: [products[0], products[2], products[4]],
+        topSellers: [],
         trends:
-          "ยอดขายมีแนวโน้มเพิ่มขึ้นในช่วงสุดสัปดาห์ โดยเฉพาะสินค้าประเภทเสื้อผ้า หมวดหมู่เครื่องประดับขายได้ดีอย่างต่อเนื่องตลอดทั้งเดือน",
+          "ไม่มีข้อมูลการขายเพียงพอที่จะสร้างแนวโน้ม",
       });
       setIsLoading(false);
-    }, 2000);
+    }, 1500);
   };
 
   return (
@@ -64,11 +65,15 @@ export default function InsightsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="list-disc space-y-2 pl-5">
-                {insights.topSellers.map((item: any) => (
-                  <li key={item.id}>{item.name}</li>
-                ))}
-              </ul>
+              {insights.topSellers.length > 0 ? (
+                <ul className="list-disc space-y-2 pl-5">
+                  {insights.topSellers.map((item: any) => (
+                    <li key={item.id}>{item.name}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">ไม่มีข้อมูล</p>
+              )}
             </CardContent>
           </Card>
           <Card>

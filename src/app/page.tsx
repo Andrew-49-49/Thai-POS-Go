@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ChartTooltip, ChartTooltipContent, ChartContainer } from "@/components/ui/chart"
 import { th } from "@/lib/translations"
-import { lowStockProducts, salesData, weeklySales } from "@/lib/mock-data"
+import { Product, weeklySales } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { getSheetData } from "@/lib/sheets-actions"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const chartConfig = {
   sales: {
@@ -18,6 +20,32 @@ const chartConfig = {
 }
 
 export default function Dashboard() {
+    const [lowStockProducts, setLowStockProducts] = React.useState<Product[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchProducts = async () => {
+            setLoading(true);
+            const data = await getSheetData('Sheet1!A2:G');
+            if (data) {
+                const productsData: Product[] = data.map((row: any[], index: number) => ({
+                    id: row[0] || `p${index + 1}`,
+                    name: row[1] || "",
+                    sku: row[2] || "",
+                    price: parseFloat(row[3]) || 0,
+                    stock: parseInt(row[4]) || 0,
+                    category: row[5] || "",
+                    imageUrl: row[6] || undefined,
+                }));
+                setLowStockProducts(productsData.filter(p => p.stock < 10));
+            }
+            setLoading(false);
+        };
+
+        fetchProducts();
+    }, []);
+
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -33,8 +61,8 @@ export default function Dashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">฿12,345</div>
-            <p className="text-xs text-muted-foreground">+20.1% {th.fromLastMonth}</p>
+            <div className="text-2xl font-bold">฿0</div>
+            <p className="text-xs text-muted-foreground">{/* +20.1% {th.fromLastMonth} */}</p>
           </CardContent>
         </Card>
         <Card>
@@ -43,8 +71,8 @@ export default function Dashboard() {
             <History className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
-            <p className="text-xs text-muted-foreground">+180.1% {th.fromLastMonth}</p>
+            <div className="text-2xl font-bold">0</div>
+             <p className="text-xs text-muted-foreground">{/* +180.1% {th.fromLastMonth} */}</p>
           </CardContent>
         </Card>
         <Card>
@@ -53,8 +81,8 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12</div>
-            <p className="text-xs text-muted-foreground">+15% {th.fromLastMonth}</p>
+            <div className="text-2xl font-bold">0</div>
+             <p className="text-xs text-muted-foreground">{/* +15% {th.fromLastMonth} */}</p>
           </CardContent>
         </Card>
         <Card>
@@ -63,7 +91,7 @@ export default function Dashboard() {
             <Boxes className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{lowStockProducts.length}</div>
+            {loading ? <Skeleton className="h-8 w-12"/> : <div className="text-2xl font-bold">{lowStockProducts.length}</div>}
             <p className="text-xs text-muted-foreground">{th.itemsNeedRestocking}</p>
           </CardContent>
         </Card>
@@ -104,14 +132,27 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lowStockProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell className="text-right">
-                       <Badge variant={product.stock === 0 ? "destructive" : "secondary"}>{product.stock}</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {loading ? (
+                    Array.from({length: 3}).map((_, i) => (
+                        <TableRow key={i}>
+                            <TableCell><Skeleton className="h-4 w-3/4"/></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-4 w-8 inline-block"/></TableCell>
+                        </TableRow>
+                    ))
+                ) : lowStockProducts.length > 0 ? (
+                  lowStockProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={product.stock === 0 ? "destructive" : "secondary"}>{product.stock}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={2} className="text-center text-muted-foreground">ไม่มีสินค้าใกล้หมด</TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
