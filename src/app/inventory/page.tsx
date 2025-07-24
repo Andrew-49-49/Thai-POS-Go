@@ -47,8 +47,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { getSheetData } from "@/lib/sheets-actions";
+import { getSheetData, appendSheetData, updateSheetData, clearSheetData } from "@/lib/sheets-actions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 export default function InventoryPage() {
   const [products, setProducts] = React.useState<Product[]>([]);
@@ -56,28 +57,29 @@ export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | undefined>(undefined);
+  const { toast } = useToast();
+
+  const fetchProducts = React.useCallback(async () => {
+    setLoading(true);
+    const data = await getSheetData('Sheet1!A2:G'); // Assuming data is in Sheet1 and starts from row 2
+    if (data) {
+      const productsData: Product[] = data.map((row: any[], index: number) => ({
+        id: row[0] || `p${index + 1}`,
+        name: row[1] || "",
+        sku: row[2] || "",
+        price: parseFloat(row[3]) || 0,
+        stock: parseInt(row[4]) || 0,
+        category: row[5] || "",
+        imageUrl: row[6] || undefined,
+      }));
+      setProducts(productsData);
+    }
+    setLoading(false);
+  }, []);
 
   React.useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      const data = await getSheetData('Sheet1!A2:G'); // Assuming data is in Sheet1 and starts from row 2
-      if (data) {
-        const productsData: Product[] = data.map((row: any[], index: number) => ({
-          id: row[0] || `p${index + 1}`,
-          name: row[1] || "",
-          sku: row[2] || "",
-          price: parseFloat(row[3]) || 0,
-          stock: parseInt(row[4]) || 0,
-          category: row[5] || "",
-          imageUrl: row[6] || undefined,
-        }));
-        setProducts(productsData);
-      }
-      setLoading(false);
-    };
-
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   const filteredProducts = products.filter(
     (product) =>
@@ -85,12 +87,26 @@ export default function InventoryPage() {
       (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSaveProduct = (product: Product) => {
-    // This part would need to be updated to write back to the Google Sheet
-    if (editingProduct) {
-      setProducts(products.map((p) => (p.id === product.id ? product : p)));
-    } else {
-      setProducts([...products, { ...product, id: `p${products.length + 1}` }]);
+  const handleSaveProduct = async (product: Product) => {
+    try {
+        if (editingProduct) {
+            // Update existing product
+            const productIndex = products.findIndex((p) => p.id === product.id);
+            if (productIndex === -1) return;
+            const range = `Sheet1!A${productIndex + 2}:G${productIndex + 2}`;
+            const values = [[product.id, product.name, product.sku, product.price, product.stock, product.category, product.imageUrl || ""]];
+            await updateSheetData(range, values);
+            toast({ title: "สำเร็จ", description: "สินค้าถูกแก้ไขเรียบร้อยแล้ว" });
+        } else {
+            // Add new product
+            const newId = `p${Date.now()}`;
+            const values = [[newId, product.name, product.sku, product.price, product.stock, product.category, product.imageUrl || ""]];
+            await appendSheetData('Sheet1!A:G', values);
+            toast({ title: "สำเร็จ", description: "สินค้าถูกเพิ่มเรียบร้อยแล้ว" });
+        }
+        fetchProducts(); // Refresh data from sheet
+    } catch (error) {
+        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกข้อมูลสินค้าได้" });
     }
     setEditingProduct(undefined);
   };
@@ -105,9 +121,17 @@ export default function InventoryPage() {
     setIsDialogOpen(true);
   }
 
-  const handleDelete = (productId: string) => {
-    // This part would need to be updated to write back to the Google Sheet
-    setProducts(products.filter((p) => p.id !== productId));
+  const handleDelete = async (productId: string) => {
+     try {
+        const productIndex = products.findIndex((p) => p.id === productId);
+        if (productIndex === -1) return;
+        const range = `Sheet1!A${productIndex + 2}:G${productIndex + 2}`;
+        await clearSheetData(range); // This will clear the row
+        toast({ title: "สำเร็จ", description: "สินค้าถูกลบเรียบร้อยแล้ว" });
+        fetchProducts(); // Refresh data
+     } catch (error) {
+        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถลบสินค้าได้" });
+     }
   };
 
 

@@ -94,3 +94,22 @@ export const updateSheetData = async (range: string, values: any[][]) => {
         return null;
     }
 }
+
+export const clearSheetData = async (range: string) => {
+    const sheets = getSheets();
+    if (!sheets) {
+        console.error("Google Sheets API not initialized.");
+        return null;
+    }
+
+    try {
+        const response = await sheets.spreadsheets.values.clear({
+            spreadsheetId: SPREADSHEET_ID,
+            range: range,
+        });
+        return response;
+    } catch (error) {
+        console.error("Error clearing sheet data:", error);
+        return null;
+    }
+};
