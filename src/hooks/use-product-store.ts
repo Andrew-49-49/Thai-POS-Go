@@ -4,15 +4,14 @@
 import { create } from 'zustand';
 import { Product } from '@/lib/mock-data';
 import { getProducts, saveProducts } from '@/lib/pantry-actions';
-import { useToast } from './use-toast';
 
 interface ProductState {
   products: Product[];
   loading: boolean;
   fetchProducts: () => Promise<void>;
-  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
-  updateProduct: (product: Product) => Promise<void>;
-  deleteProduct: (productId: string) => Promise<void>;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<boolean>;
+  updateProduct: (product: Product) => Promise<boolean>;
+  deleteProduct: (productId: string) => Promise<boolean>;
   updateStock: (cartItems: { id: string, quantity: number }[]) => Promise<void>;
 }
 
@@ -21,21 +20,29 @@ export const useProductStore = create<ProductState>((set, get) => ({
   loading: true,
   fetchProducts: async () => {
     set({ loading: true });
-    const products = await getProducts();
-    set({ products, loading: false });
+    try {
+        const products = await getProducts();
+        set({ products, loading: false });
+    } catch (error) {
+        console.error("Failed to fetch products:", error);
+        set({ loading: false });
+    }
   },
   addProduct: async (productData) => {
     const newProduct = { ...productData, id: `prod_${Date.now()}` };
     const currentProducts = get().products;
     const updatedProducts = [...currentProducts, newProduct];
     
+    // Save to Pantry first
     const savedData = await saveProducts(updatedProducts);
     if (savedData) {
+      // Then update the store with the confirmed data
       set({ products: savedData });
+      return true;
     } else {
-        const { toast } = useToast.getState();
-        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถเพิ่มสินค้าได้" });
-        await get().fetchProducts(); // Refetch on error
+      // Refetch on error to ensure consistency
+      await get().fetchProducts();
+      return false;
     }
   },
   updateProduct: async (productData) => {
@@ -45,10 +52,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
     const savedData = await saveProducts(updatedProducts);
     if (savedData) {
       set({ products: savedData });
+      return true;
     } else {
-      const { toast } = useToast.getState();
-      toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถแก้ไขสินค้าได้" });
-      await get().fetchProducts(); // Refetch on error
+      await get().fetchProducts();
+      return false;
     }
   },
   deleteProduct: async (productId) => {
@@ -58,10 +65,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
     const savedData = await saveProducts(updatedProducts);
     if (savedData) {
       set({ products: savedData });
+      return true;
     } else {
-      const { toast } = useToast.getState();
-      toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถลบสินค้าได้" });
-      await get().fetchProducts(); // Refetch on error
+      await get().fetchProducts();
+      return false;
     }
   },
     updateStock: async (cartItems) => {
@@ -69,7 +76,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
         const updatedProducts = currentProducts.map(p => {
             const cartItem = cartItems.find(item => item.id === p.id);
             if (cartItem) {
-                return { ...p, stock: p.stock - cartItem.quantity };
+                // Ensure stock doesn't go below zero
+                const newStock = Math.max(0, p.stock - cartItem.quantity);
+                return { ...p, stock: newStock };
             }
             return p;
         });

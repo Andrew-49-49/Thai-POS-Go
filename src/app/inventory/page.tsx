@@ -70,19 +70,19 @@ export default function InventoryPage() {
   );
 
   const handleSaveProduct = async (product: Omit<Product, 'id'> & { id?: string }) => {
-    try {
-      if (editingProduct && product.id) {
-        await updateProduct(product as Product);
+    setEditingProduct(undefined);
+    setIsDialogOpen(false);
+    let success = false;
+    if (product.id) {
+        success = await updateProduct(product as Product);
         toast({ title: "สำเร็จ", description: "สินค้าถูกแก้ไขเรียบร้อยแล้ว" });
-      } else {
-        await addProduct(product);
+    } else {
+        success = await addProduct(product);
         toast({ title: "สำเร็จ", description: "สินค้าถูกเพิ่มเรียบร้อยแล้ว" });
-      }
-      setIsDialogOpen(false);
-    } catch (error) {
-      // The store handles its own error toasts
-    } finally {
-      setEditingProduct(undefined);
+    }
+
+    if (!success) {
+        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: product.id ? "ไม่สามารถแก้ไขสินค้าได้" : "ไม่สามารถเพิ่มสินค้าได้" });
     }
   };
 
@@ -97,11 +97,11 @@ export default function InventoryPage() {
   }
 
   const handleDelete = async (productId: string) => {
-     try {
-        await deleteProduct(productId);
+     const success = await deleteProduct(productId);
+     if(success) {
         toast({ title: "สำเร็จ", description: "สินค้าถูกลบเรียบร้อยแล้ว" });
-     } catch (error) {
-        // The store handles its own error toasts
+     } else {
+        toast({ variant: "destructive", title: "เกิดข้อผิดพลาด", description: "ไม่สามารถลบสินค้าได้" });
      }
   };
 
